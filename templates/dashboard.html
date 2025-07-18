@@ -3,22 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <title>Nucleares Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
-    <h1>Nucleares Dashboard</h1>
-    <div id="alarms">
-        <h2>Active Alarms</h2>
-        <ul>
+<body class="bg-light">
+<div class="container py-4">
+    <h1 class="mb-4">Nucleares Dashboard</h1>
+
+    <div id="alarms" class="mb-4">
+        <h3>Active Alarms</h3>
+        <ul class="list-group" id="alarmList">
             {% for alarm in alarms %}
-            <li>{{ alarm }}</li>
+            <li class="list-group-item list-group-item-danger">{{ alarm }}</li>
             {% else %}
-            <li>No alarms</li>
+            <li class="list-group-item">No alarms</li>
             {% endfor %}
         </ul>
     </div>
 
-    <table border="1">
+    <table class="table table-striped" id="dataTable">
         <thead>
             <tr>
                 <th>Variable</th>
@@ -32,41 +35,105 @@
         </tbody>
     </table>
 
-    <canvas id="coreTempChart" width="400" height="150"></canvas>
+    <div class="row">
+        <div class="col-md-6">
+            <canvas id="coreTempChart"></canvas>
+        </div>
+        <div class="col-md-6">
+            <canvas id="corePressureChart"></canvas>
+        </div>
+    </div>
 
-    <script>
-        async function fetchHistory(){
-            const res = await fetch('/history');
-            const data = await res.json();
-            return data;
+    <hr>
+    <h3>Controls</h3>
+    <form id="msgForm" class="row gy-2 gx-2 align-items-center">
+        <div class="col-auto">
+            <input type="text" class="form-control" name="value" placeholder="Message">
+        </div>
+        <input type="hidden" name="variable" value="FUN_SHOW_MESSAGE">
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Send Message</button>
+        </div>
+    </form>
+    <button id="emStop" class="btn btn-danger mt-3">Emergency Stop</button>
+</div>
+
+<script>
+async function fetchHistory(){
+    const res = await fetch('/history');
+    return await res.json();
+}
+
+async function fetchData(){
+    const res = await fetch('/data');
+    return await res.json();
+}
+
+let tempChart, pressureChart;
+
+async function drawCharts(){
+    const history = await fetchHistory();
+    const labels = Array.from({length: history.CORE_TEMP.length}, (_, i)=>i);
+    const temps = history.CORE_TEMP.map(d=>parseFloat(d.value));
+    const presses = history.CORE_PRESSURE.map(d=>parseFloat(d.value));
+
+    const ctx1 = document.getElementById('coreTempChart');
+    const ctx2 = document.getElementById('corePressureChart');
+
+    if(tempChart) tempChart.destroy();
+    if(pressureChart) pressureChart.destroy();
+
+    tempChart = new Chart(ctx1, {
+        type: 'line',
+        data: { labels: labels, datasets: [{ label:'Core Temp', data: temps, borderColor:'red', fill:false }] },
+        options: { animation:false, responsive:true }
+    });
+
+    pressureChart = new Chart(ctx2, {
+        type: 'line',
+        data: { labels: labels, datasets: [{ label:'Core Pressure', data: presses, borderColor:'blue', fill:false }] },
+        options: { animation:false, responsive:true }
+    });
+}
+
+async function updateData(){
+    const data = await fetchData();
+    const tbody = document.querySelector('#dataTable tbody');
+    tbody.innerHTML = '';
+    for(const [varName,val] of Object.entries(data.current)){
+        const row = `<tr><td>${varName}</td><td>${val}</td></tr>`;
+        tbody.insertAdjacentHTML('beforeend', row);
+    }
+    const alarmList = document.getElementById('alarmList');
+    alarmList.innerHTML = '';
+    if(data.alarms.length===0){
+        alarmList.innerHTML = '<li class="list-group-item">No alarms</li>';
+    } else {
+        for(const alarm of data.alarms){
+            alarmList.insertAdjacentHTML('beforeend', `<li class="list-group-item list-group-item-danger">${alarm}</li>`);
         }
+    }
+}
 
-        async function drawChart(){
-            const data = await fetchHistory();
-            const labels = Array.from({length: data.CORE_TEMP.length}, (_, i) => i);
-            const tempValues = data.CORE_TEMP.map(d => parseFloat(d.value));
+setInterval(()=>{ updateData(); drawCharts(); }, 5000);
+updateData();
+drawCharts();
 
-            const ctx = document.getElementById('coreTempChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Core Temp',
-                        data: tempValues,
-                        borderColor: 'red',
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    animation: false
-                }
-            });
-        }
+// Form handling
+const msgForm = document.getElementById('msgForm');
+msgForm.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const formData = new FormData(msgForm);
+    await fetch('/command', {method:'POST', body: formData});
+    msgForm.reset();
+});
 
-        drawChart();
-        setInterval(drawChart, 5000);
-    </script>
+document.getElementById('emStop').addEventListener('click', async ()=>{
+    const fd = new FormData();
+    fd.append('variable','CORE_EMERGENCY_STOP');
+    fd.append('value','1');
+    await fetch('/command', {method:'POST', body: fd});
+});
+</script>
 </body>
 </html>

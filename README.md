@@ -1,12 +1,14 @@
 # Nucleares Automation Dashboard
 
-This project provides a simple Flask-based dashboard for the game **Nucleares**. It connects to the in-game webserver to monitor reactor variables and display them in real time. A basic alarm system and graph are included as a starting point for further automation.
+This project provides a Flask-based dashboard for the game **Nucleares**. It connects to the in-game webserver to monitor reactor variables and display them in real time. A basic alarm system, charts and control examples are included as a starting point for further automation.
 
 ## Features
 
 - Polls the game's webserver for selected variables.
-- Displays current values and active alarms.
-- Shows a line graph of core temperature.
+- Displays current values and active alarms with automatic updates.
+- Charts for core temperature and pressure using Chart.js.
+- Simple controls to trigger an in-game message or emergency stop.
+- Styled with Bootstrap for a cleaner look.
 - Placeholder thresholds for alarms and a framework for adding full automation.
 
 ## Requirements
@@ -38,3 +40,4 @@ The dashboard will be available at `http://localhost:5000`.
 - **Autonomous Mode**: create functions to send POST requests to the game server based on the current plant state.
 
 For more information about the game and its variables, consult the official "NUCLEARES - User Manual" included in this repository.
+
