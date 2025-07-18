@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nucleares Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Nucleares Dashboard</h1>
+    <div id="alarms">
+        <h2>Active Alarms</h2>
+        <ul>
+            {% for alarm in alarms %}
+            <li>{{ alarm }}</li>
+            {% else %}
+            <li>No alarms</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Variable</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for var, value in data.items() %}
+            <tr><td>{{ var }}</td><td>{{ value }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <canvas id="coreTempChart" width="400" height="150"></canvas>
+
+    <script>
+        async function fetchHistory(){
+            const res = await fetch('/history');
+            const data = await res.json();
+            return data;
+        }
+
+        async function drawChart(){
+            const data = await fetchHistory();
+            const labels = Array.from({length: data.CORE_TEMP.length}, (_, i) => i);
+            const tempValues = data.CORE_TEMP.map(d => parseFloat(d.value));
+
+            const ctx = document.getElementById('coreTempChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Core Temp',
+                        data: tempValues,
+                        borderColor: 'red',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: false
+                }
+            });
+        }
+
+        drawChart();
+        setInterval(drawChart, 5000);
+    </script>
+</body>
+</html>
