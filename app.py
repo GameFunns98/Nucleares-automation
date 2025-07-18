@@ -5,7 +5,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from threading import Lock
 from collections import deque
 
-SERVER_URL = os.environ.get('NUCLEARES_SERVER_URL', 'http://localhost:8080')
+SERVER_URL = os.environ.get('NUCLEARES_SERVER_URL', 'http://localhost:8785')
 # List of variables to track initially
 TRACKED_VARS = [
     'TIME',

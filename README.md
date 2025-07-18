@@ -22,10 +22,10 @@ pip install -r requirements.txt
 
 ## Usage
 
-Set the environment variable `NUCLEARES_SERVER_URL` to the base URL of the game's webserver (for example `http://localhost:8080`) and run the application:
+Set the environment variable `NUCLEARES_SERVER_URL` to the base URL of the game's webserver (for example `http://localhost:8785`) and run the application:
 
 ```bash
-export NUCLEARES_SERVER_URL=http://localhost:8080
+export NUCLEARES_SERVER_URL=http://localhost:8785
 python app.py
 ```
 
